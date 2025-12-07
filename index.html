@@ -376,7 +376,7 @@
         }
 
         .services-section h2 {
-            color: var(--color-primary);
+            color: #000000;
             text-align: center;
             margin-bottom: 40px;
             font-size: 32px;
@@ -662,9 +662,9 @@
         <!-- Stats Section -->
         <div class="stats-section">
             <div class="stat-card">
-                <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
-                <div class="stat-number" id="visitorCount">27,897</div>
-                <div class="stat-label">People Helped</div>
+                <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                <div class="stat-number">54%</div>
+                <div class="stat-label">Cases in 2024/2025 Damages Awarded</div>
             </div>
             <div class="stat-card">
                 <div style="font-size: 32px; margin-bottom: 10px;">✅</div>
@@ -697,7 +697,7 @@
         </div>
 
         <div class="card" style="background: linear-gradient(135deg, rgba(0,102,204,0.05) 0%, rgba(255,107,53,0.05) 100%); margin-bottom: 40px; padding: 30px; border-radius: 8px;">
-            <h2 style="text-align: center; margin-bottom: 30px; color: var(--color-primary);">💰 What Compensation Can You Expect?</h2>
+            <h2 style="text-align: center; margin-bottom: 30px; color: #000000;">💰 What Compensation Can You Expect?</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div style="padding: 20px; background: white; border-radius: 8px; border-left: 4px solid var(--color-accent);">
                     <h3 style="color: var(--color-primary); margin-top: 0;">General Damages</h3>
@@ -870,12 +870,16 @@
                     <div>100% Satisfaction Rating</div>
                 </div>
                 <div class="badge">
-                    <div class="badge-icon">👥</div>
-                    <div>27,897 People Helped</div>
+                    <div class="badge-icon">📊</div>
+                    <div>54% Cases in 2024/2025 Damages Awarded</div>
                 </div>
                 <div class="badge">
                     <div class="badge-icon">✅</div>
                     <div>367 Successful Claims</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🔒</div>
+                    <div>100% Privacy</div>
                 </div>
             </div>
         </div>
@@ -969,8 +973,21 @@
                         <option value="delayed-ent">Delayed ENT Treatment (breathing, deviated septum)</option>
                         <option value="delayed-surgery">Delayed Surgery</option>
                         <option value="delayed-diagnosis">Delayed Diagnosis</option>
-                        <option value="surgical-error">Surgical Error</option>
-                        <option value="misdiagnosis">Misdiagnosis</option>
+                        <option value="surgical-error">Surgical Error (wrong-site, retained swabs/tools)</option>
+                        <option value="diagnostic-failure">Diagnostic Failures (misdiagnosis, delayed diagnosis)</option>
+                        <option value="medication-error">Medication Errors (wrong drug, overdose, allergies)</option>
+                        <option value="birth-injury">Birth Injuries (cerebral palsy, shoulder dystocia)</option>
+                        <option value="anaesthesia-error">Anaesthesia Errors (overdose, airway mismanagement)</option>
+                        <option value="infection-control">Infection Control Failures (MRSA, C.difficile)</option>
+                        <option value="nursing-negligence">Nursing Negligence (pressure ulcers, falls, dehydration)</option>
+                        <option value="gp-failure">GP Failures (missed referrals, wrong prescriptions)</option>
+                        <option value="orthopaedic-error">Orthopaedic Errors (botched hip/knee, nerve damage)</option>
+                        <option value="dental-negligence">Dental Negligence (nerve damage, failed root canals)</option>
+                        <option value="mental-health">Mental Health Negligence (poor risk assessment)</option>
+                        <option value="ae-delays">A&E Delays (missed fractures, ignored sepsis)</option>
+                        <option value="lab-error">Lab/Pathology Errors (false results, contaminated samples)</option>
+                        <option value="cancer-mismanagement">Cancer Mismanagement (delayed screening, wrong treatment)</option>
+                        <option value="consent-issue">Consent Issues (lack of informed consent)</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
@@ -1068,7 +1085,7 @@
             updateFileList();
         }
 
-        // Form submission
+        // Form submission - sends to Google Sheets
         function handleSubmit(event) {
             event.preventDefault();
 
@@ -1092,21 +1109,63 @@
                 return;
             }
 
-            // In a real app, this would send to a server
-            console.log({
+            // Prepare data for Google Sheets
+            const formData = {
                 firstName, lastName, email, phone, caseType, description, waitingTime,
                 filesUploaded: uploadedFiles.length,
-                fileNames: uploadedFiles.map(f => f.name)
+                fileNames: uploadedFiles.map(f => f.name),
+                submittedAt: new Date().toLocaleString()
+            };
+
+            // Send to Google Apps Script
+            const APPS_SCRIPT_URL = 'WSTAW_TUTAJ_URL_DEPLOYMENT'; // Zamień na URL deployment'u
+            
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMsg.style.display = 'block';
+                    document.getElementById('contactForm').reset();
+                    uploadedFiles = [];
+                    updateFileList();
+                    
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 5000);
+                } else {
+                    errorMsg.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+                    errorMsg.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorMsg.textContent = '❌ Error sending form: ' + error.message;
+                errorMsg.style.display = 'block';
             });
+        }
 
-            successMsg.style.display = 'block';
-            document.getElementById('contactForm').reset();
-            uploadedFiles = [];
-            updateFileList();
+        // Function to view all submissions
+        function viewAllSubmissions() {
+            const submissions = JSON.parse(localStorage.getItem('nhsSubmissions') || '[]');
+            console.log('=== ALL FORM SUBMISSIONS ===');
+            console.log(`Total: ${submissions.length} submissions`);
+            submissions.forEach((sub, index) => {
+                console.log(`\n--- Submission ${index + 1} ---`);
+                console.log(JSON.stringify(sub, null, 2));
+            });
+            alert(`${submissions.length} submissions found. Check console (F12) for details.`);
+        }
 
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 5000);
+        // Function to clear all submissions
+        function clearAllSubmissions() {
+            if (confirm('Are you sure you want to delete ALL submissions? This cannot be undone.')) {
+                localStorage.removeItem('nhsSubmissions');
+                console.log('All submissions cleared');
+                alert('All submissions have been deleted.');
+            }
         }
 
         // FAQ toggle
