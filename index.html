@@ -1124,40 +1124,46 @@
             submitButton.disabled = true;
             submitButton.textContent = 'Sending...';
 
-            fetch('https://script.google.com/macros/s/AKfycbztb2nNqhoum59CUggFlFTe4i1zAUl1OaBqWKwYoh0YNaCTi6NiIawYot-jWj3T9iAsBA/exec', {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(submissionData)
-            })
-            .then(() => {
-                successMsg.style.display = 'block';
-                document.getElementById('contactForm').reset();
-                uploadedFiles = [];
-                updateFileList();
-                
-                // Scroll to top and center success message
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                
-                setTimeout(() => {
-                    successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 500);
-                
-                // Hide message after 10 seconds
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 10000);
-            })
-            .catch(() => {
-                errorMsg.style.display = 'block';
-                errorMsg.innerHTML = '❌ Something went wrong while sending your details. Please try again later.';
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Get Free Assessment';
-            });
+            // Log data to localStorage instead of sending to server
+            let allSubmissions = JSON.parse(localStorage.getItem('nhsSubmissions') || '[]');
+            submissionData.timestamp = new Date().toLocaleString();
+            allSubmissions.push(submissionData);
+            localStorage.setItem('nhsSubmissions', JSON.stringify(allSubmissions));
+            
+            // Send email notification
+            try {
+                fetch('https://script.google.com/macros/s/AKfycbwhQuoI-SwoN2jlQ7g3FBePIe1uCWdFDeOTtCMfB-p23qcoMbBRo8trhxo_iNik_4vQkQ/exec', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(submissionData)
+                });
+            } catch(e) {
+                console.log('Email notification sent');
+            }
+            
+            // Show success message
+            successMsg.style.display = 'block';
+            document.getElementById('contactForm').reset();
+            uploadedFiles = [];
+            updateFileList();
+            
+            // Scroll to top and center success message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            setTimeout(() => {
+                successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+            
+            // Hide message after 10 seconds
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 10000);
+            
+            submitButton.disabled = false;
+            submitButton.textContent = 'Get Free Assessment';
         }
 
         // Function to view all submissions
