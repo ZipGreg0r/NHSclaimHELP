@@ -1085,7 +1085,7 @@
             updateFileList();
         }
 
-        // Form submission - sends to Google Sheets
+        // Form submission - stores data in localStorage only
         function handleSubmit(event) {
             event.preventDefault();
 
@@ -1109,19 +1109,7 @@
                 return;
             }
 
-            // Prepare data for Google Sheets
-            const formData = {
-                firstName, lastName, email, phone, caseType, description, waitingTime,
-                filesUploaded: uploadedFiles.length,
-                fileNames: uploadedFiles.map(f => f.name),
-                submittedAt: new Date().toLocaleString()
-            };
-
-            // Send to Google Sheets via public spreadsheet
-            const SHEET_ID = '10EASeiXbDwz4Al63T7xpmnImIdHO2Zr6wShQUBgi7j0';
-            const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing`;
-            
-            // Create submission data for display
+            // Create submission data
             const submissionData = {
                 firstName, lastName, email, phone, caseType, description, waitingTime,
                 filesUploaded: uploadedFiles.length,
@@ -1129,7 +1117,7 @@
                 submittedAt: new Date().toLocaleString()
             };
             
-            // Store submission in localStorage as backup
+            // Store submission in localStorage
             const submissions = JSON.parse(localStorage.getItem('nhsSubmissions') || '[]');
             submissions.push(submissionData);
             localStorage.setItem('nhsSubmissions', JSON.stringify(submissions));
@@ -1140,11 +1128,11 @@
             uploadedFiles = [];
             updateFileList();
             
-            // Log to console for manual entry into Google Sheets
-            console.log('=== NEW SUBMISSION ===');
+            // Log to console for viewing/copying to Google Sheets
+            console.log('✅ SUBMISSION SAVED');
             console.log(JSON.stringify(submissionData, null, 2));
-            console.log(`\nSubmissions stored: ${submissions.length}`);
-            console.log(`Google Sheets: ${SHEET_URL}`);
+            console.log(`Total submissions: ${submissions.length}`);
+            console.log('📌 To view all submissions, type in console: viewAllSubmissions()');
             
             setTimeout(() => {
                 successMsg.style.display = 'none';
@@ -1152,25 +1140,29 @@
         }
 
         // Function to view all submissions
-        function viewAllSubmissions() {
+        window.viewAllSubmissions = function() {
             const submissions = JSON.parse(localStorage.getItem('nhsSubmissions') || '[]');
             console.log('=== ALL FORM SUBMISSIONS ===');
             console.log(`Total: ${submissions.length} submissions`);
+            if (submissions.length === 0) {
+                console.log('No submissions yet.');
+                return;
+            }
             submissions.forEach((sub, index) => {
                 console.log(`\n--- Submission ${index + 1} ---`);
                 console.log(JSON.stringify(sub, null, 2));
             });
-            alert(`${submissions.length} submissions found. Check console (F12) for details.`);
-        }
+            console.log('\n✅ Copy the data above and paste into your Google Sheets');
+        };
 
         // Function to clear all submissions
-        function clearAllSubmissions() {
+        window.clearAllSubmissions = function() {
             if (confirm('Are you sure you want to delete ALL submissions? This cannot be undone.')) {
                 localStorage.removeItem('nhsSubmissions');
                 console.log('All submissions cleared');
                 alert('All submissions have been deleted.');
             }
-        }
+        };
 
         // FAQ toggle
         function toggleFaq(element) {
