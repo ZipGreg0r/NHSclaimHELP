@@ -1085,7 +1085,7 @@
             updateFileList();
         }
 
-        // Form submission - stores data in localStorage only
+        // Form submission - send data to Google Apps Script Web App
         function handleSubmit(event) {
             event.preventDefault();
 
@@ -1094,13 +1094,12 @@
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
 
-            // Simple validation
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
             const caseType = document.getElementById('caseType').value;
-            const description = document.getElementById('description').value;
+            const description = document.getElementById('description').value.trim();
             const waitingTime = document.getElementById('waitingTime').value;
             const agreeTerms = document.getElementById('agreeTerms').checked;
 
@@ -1109,34 +1108,46 @@
                 return;
             }
 
-            // Create submission data
             const submissionData = {
-                firstName, lastName, email, phone, caseType, description, waitingTime,
+                firstName,
+                lastName,
+                email,
+                phone,
+                caseType,
+                description,
+                waitingTime,
                 filesUploaded: uploadedFiles.length,
-                fileNames: uploadedFiles.map(f => f.name),
-                submittedAt: new Date().toLocaleString()
+                fileNames: uploadedFiles.map(f => f.name)
             };
-            
-            // Store submission in localStorage
-            const submissions = JSON.parse(localStorage.getItem('nhsSubmissions') || '[]');
-            submissions.push(submissionData);
-            localStorage.setItem('nhsSubmissions', JSON.stringify(submissions));
-            
-            // Show success message
-            successMsg.style.display = 'block';
-            document.getElementById('contactForm').reset();
-            uploadedFiles = [];
-            updateFileList();
-            
-            // Log to console for viewing/copying to Google Sheets
-            console.log('✅ SUBMISSION SAVED');
-            console.log(JSON.stringify(submissionData, null, 2));
-            console.log(`Total submissions: ${submissions.length}`);
-            console.log('📌 To view all submissions, type in console: viewAllSubmissions()');
-            
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 5000);
+
+            const submitButton = document.querySelector('.submit-btn');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+
+            fetch('https://script.google.com/macros/s/AKfycbwhQuoI-SwoN2jlQ7g3FBePIe1uCWdFDeOTtCMfB-p23qcoMbBRo8trhxo_iNik_4vQkQ/exec', {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(submissionData)
+            })
+            .then(() => {
+                successMsg.style.display = 'block';
+                document.getElementById('contactForm').reset();
+                uploadedFiles = [];
+                updateFileList();
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 5000);
+            })
+            .catch(() => {
+                alert('Something went wrong while sending your details. Please try again later.');
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Get Free Assessment';
+            });
         }
 
         // Function to view all submissions
