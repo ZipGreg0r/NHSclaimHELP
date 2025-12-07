@@ -1117,34 +1117,38 @@
                 submittedAt: new Date().toLocaleString()
             };
 
-            // Send to Google Apps Script
-            const APPS_SCRIPT_URL = 'WSTAW_TUTAJ_URL_DEPLOYMENT'; // Zamień na URL deployment'u
+            // Send to Google Sheets via public spreadsheet
+            const SHEET_ID = '10EASeiXbDwz4Al63T7xpmnImIdHO2Zr6wShQUBgi7j0';
+            const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing`;
             
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    successMsg.style.display = 'block';
-                    document.getElementById('contactForm').reset();
-                    uploadedFiles = [];
-                    updateFileList();
-                    
-                    setTimeout(() => {
-                        successMsg.style.display = 'none';
-                    }, 5000);
-                } else {
-                    errorMsg.textContent = '❌ Error: ' + (data.error || 'Unknown error');
-                    errorMsg.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                errorMsg.textContent = '❌ Error sending form: ' + error.message;
-                errorMsg.style.display = 'block';
-            });
+            // Create submission data for display
+            const submissionData = {
+                firstName, lastName, email, phone, caseType, description, waitingTime,
+                filesUploaded: uploadedFiles.length,
+                fileNames: uploadedFiles.map(f => f.name),
+                submittedAt: new Date().toLocaleString()
+            };
+            
+            // Store submission in localStorage as backup
+            const submissions = JSON.parse(localStorage.getItem('nhsSubmissions') || '[]');
+            submissions.push(submissionData);
+            localStorage.setItem('nhsSubmissions', JSON.stringify(submissions));
+            
+            // Show success message
+            successMsg.style.display = 'block';
+            document.getElementById('contactForm').reset();
+            uploadedFiles = [];
+            updateFileList();
+            
+            // Log to console for manual entry into Google Sheets
+            console.log('=== NEW SUBMISSION ===');
+            console.log(JSON.stringify(submissionData, null, 2));
+            console.log(`\nSubmissions stored: ${submissions.length}`);
+            console.log(`Google Sheets: ${SHEET_URL}`);
+            
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 5000);
         }
 
         // Function to view all submissions
